@@ -21,7 +21,6 @@ const Login = () => {
       body: JSON.stringify(data),
     });
     const res = await r.text();
-    console.log(res);
     if (r.ok) {
       navigate("/account");
     } else {

@@ -3,21 +3,27 @@ import User from "../models/login_user.js";
 
 const Auth = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const AccessToken = req.cookies.AccessToken;
 
-    if (!token) {
-      return res.status(401).send("Unauthorized");
+    if (!AccessToken) {
+      return res.status(401).send({ message: "Unauthorized" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(AccessToken, process.env.JWT_SECRET);
+
     const user = await User.findById(decoded.userID);
 
     if (!user) {
-      return res.status(401).send("Unauthorized");
+      return res.status(401).send({ message: "Unauthorized" });
     }
 
     return res.status(200).json({ username: user.username });
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .send({ message: "Access token expired"});
+    }
     console.error("Error occurred while authenticating user:", error);
     return res.status(500).send("Internal Server Error");
   }
