@@ -135,6 +135,24 @@ React_Express_MongDB_Project/
 - HTTPS encryption
 - Password strength requirements
 
+## 🔐 Auth Tokens & Flow
+
+- **Auth type:** Password-based authentication using `bcrypt` (salt rounds: 10) and JWTs.
+- **Access token:** Short-lived JWT issued at login (current backend sets `expiresIn: "1minute"` in the access token generator). Access token is returned in JSON and also set as an `httpOnly` cookie named `AccessToken`.
+- **Refresh token:** JWT issued at login (current backend sets `expiresIn: "1h"` in `login.js`, while `refresh.js`'s generator uses `1d` for new tokens). The refresh token is set as an `httpOnly` cookie named `RefreshToken` and stored in the database as a bcrypt hash.
+- **Cookies (current implementation):** `httpOnly: true`, `sameSite: "lax"`, `secure: false` (development), `maxAge: 7 days`.
+- **Refresh flow (endpoint):** `POST /refresh` — the server reads the `RefreshToken` cookie, verifies the JWT, `bcrypt.compare()`s it with the stored hashed value on the user record, and if valid issues a new access token and refresh token, persists the hashed refresh token, and sets updated cookies.
+
+Implementation notes / gotchas:
+- The backend persists refresh tokens hashed with bcrypt (10 salt rounds) instead of storing raw tokens — this reduces risk if the DB is leaked.
+- There is a small implementation inconsistency: `login.js` issues a refresh token with `expiresIn: "1h"`, while `refresh.js`'s helper issues a refresh token with `expiresIn: "1d"`. Additionally, `refresh.js` currently hashes the old cookie value instead of the newly-issued refresh token before saving it to the DB; consider fixing that to store the newly-generated refresh token.
+
+Production recommendations:
+- Set `secure: true` for cookies and always serve over HTTPS.
+- Keep access tokens short and refresh tokens longer, rotate refresh tokens on use, and always store only hashed refresh tokens server-side.
+- Use a strong `JWT_SECRET` from environment variables and rotate secrets when necessary.
+- Consider additional protections such as refresh token rotation detection, IP/device checks, and revocation lists for compromised tokens.
+
 ## 📝 License
 
 ISC

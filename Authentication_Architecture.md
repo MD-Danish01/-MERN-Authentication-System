@@ -12,6 +12,15 @@ This project implements a **cookie-based password authentication** system using:
 | Auth Token  | JWT (JSON Web Token)         |       |
 | Hashing     | bcrypt (salt rounds: 10)     |       |
 
+### Current Implementation Snapshot
+
+- Auth is password-based (`username` + `password`) with bcrypt verification.
+- `POST /login` issues **AccessToken** and **RefreshToken**.
+- `GET /account` validates `req.cookies.AccessToken`.
+- `GET /refresh` validates `req.cookies.RefreshToken`, compares against hashed token in DB, then rotates tokens.
+- User model stores `username`, `password` (bcrypt hash), and `RefreshToken` (bcrypt hash of refresh token).
+- Cookies currently use `httpOnly: true`, `sameSite: "lax"`, `secure: false` (development), `maxAge: 7 days`.
+
 ---
 
 ## System Architecture Diagram
@@ -168,7 +177,8 @@ This project implements a **cookie-based password authentication** system using:
        │                  └───────┬───────┘                │
        │                          │                        │
        │  200 OK                  │                        │
-       │  Set-Cookie: token=JWT   │                        │
+      │  Set-Cookie: AccessToken │                        │
+      │  + RefreshToken          │                        │
        │  (httpOnly, sameSite:lax)│                        │
        │◀─────────────────────────│                        │
        │                          │                        │
@@ -183,9 +193,9 @@ This project implements a **cookie-based password authentication** system using:
 1. React sends `{ username, password }` with `credentials: "include"` to `POST /login`
 2. Server finds the user in MongoDB
 3. **bcrypt.compare()** re-hashes the input password using the stored salt and compares
-4. If match → **jwt.sign()** creates a JWT containing `{ userID: user._id }`
-5. JWT is set as an **httpOnly cookie** via `Set-Cookie` header
-6. Browser **automatically stores** the cookie (you never see it in JS — that's the security!)
+4. If match → server issues two JWTs containing `{ userID: user._id }`: **AccessToken** and **RefreshToken**
+5. Both tokens are set as **httpOnly cookies** via `Set-Cookie` headers
+6. Browser **automatically stores** these cookies (not directly readable by client JS)
 7. React navigates user to `/account`
 
 ---
@@ -196,17 +206,17 @@ This project implements a **cookie-based password authentication** system using:
  Browser (React)            Express Server              MongoDB
        │                          │                        │
        │  GET /account            │                        │
-       │  Cookie: token=eyJhb...  │                        │
+      │  Cookie: AccessToken=... │                        │
        │  (auto-attached by       │                        │
        │   browser because        │                        │
        │   credentials:"include") │                        │
        │─────────────────────────▶│                        │
        │                          │                        │
        │                  cookie-parser extracts           │
-       │                  req.cookies.token                │
+      │                  req.cookies.AccessToken          │
        │                          │                        │
        │                  jwt.verify(                       │
-       │                    token,                          │
+      │                    AccessToken,                    │
        │                    JWT_SECRET                      │
        │                  )                                 │
        │                  ┌───────┴───────┐                │
@@ -234,7 +244,7 @@ This project implements a **cookie-based password authentication** system using:
 **What happens step-by-step:**
 1. Browser navigates to `/account` → React calls `GET /account` with `credentials: "include"`
 2. Browser **automatically** attaches the stored cookie in the `Cookie` header
-3. `cookie-parser` middleware parses it → `req.cookies.token` is available
+3. `cookie-parser` middleware parses it → `req.cookies.AccessToken` is available
 4. **jwt.verify()** decodes the token and verifies it hasn't been tampered with
 5. The `userID` from inside the JWT is used to look up the user in MongoDB
 6. Server responds with the username → React displays "welcome danish"
@@ -252,7 +262,7 @@ This project implements a **cookie-based password authentication** system using:
        │─────────────────────────▶│                        │
        │                          │                        │
        │                  cookie-parser:                    │
-       │                  req.cookies.token                 │
+      │                  req.cookies.AccessToken           │
        │                  = undefined                       │
        │                          │                        │
        │  401 "Unauthorized"      │                        │
@@ -260,11 +270,11 @@ This project implements a **cookie-based password authentication** system using:
        │                          │                        │
        │                    OR                              │
        │                          │                        │
-       │                  jwt.verify() fails                │
-       │                  (expired/invalid)                 │
+      │                  jwt.verify() fails                │
+      │                  (expired/invalid)                 │
        │                          │                        │
-       │  500 "Internal Server    │                        │
-       │       Error"             │                        │
+      │  401 "Access token       │                        │
+      │       expired"           │                        │
        │◀─────────────────────────│                        │
        │                          │                        │
 ```
@@ -367,9 +377,10 @@ backend/
 ├── models/
 │   └── login_user.js         ← Mongoose schema: { username, password }
 └── controlers/
-    ├── signup.js             ← Hash password → save to DB
-    ├── login.js              ← Verify password → issue JWT cookie
-    └── auth.js               ← Verify JWT cookie → return user data
+      ├── signup.js             ← Hash password → save to DB
+      ├── login.js              ← Verify password → issue AccessToken + RefreshToken
+      ├── auth.js               ← Verify AccessToken cookie → return user data
+      └── refresh.js            ← Verify + rotate refresh token pair
 
 React App/
 └── src/
@@ -420,6 +431,8 @@ React App/
          │                     │                   │ │
          │                     │◀──────────────────┘ │
          │  200 + Set-Cookie   │                     │
+         │  AccessToken,       │                     │
+         │  RefreshToken       │                     │
          │◀────────────────────│                     │
          │                     │                     │
          │  🍪 Cookie stored   │                     │
@@ -427,7 +440,8 @@ React App/
          │                     │                     │
    ══════╪═════════════════════╪═════════════════════╪══════  AUTH CHECK
          │  GET /account       │                     │
-         │  Cookie: token=JWT  │                     │
+         │  Cookie:            │                     │
+         │  AccessToken=JWT    │                     │
          │────────────────────▶│                     │
          │                     │──jwt.verify()─────┐ │
          │                     │                   │ │
@@ -442,3 +456,23 @@ React App/
          │  "welcome danish"   │                     │
          ▼                     ▼                     ▼
 ```
+
+## Access & Refresh Token Details
+
+- **Overview:** The app uses JWTs for session management and `bcrypt` for password hashing and refresh-token storage. On successful login the backend issues both an access token (short-lived) and a refresh token (longer-lived).
+- **Login behavior:** `POST /login` verifies credentials with `bcrypt.compare()`, then issues an access token and a refresh token. Both tokens are set as `httpOnly` cookies and the refresh token is hashed (bcrypt) and stored on the user record in MongoDB.
+- **Cookie settings (current implementation):** `httpOnly: true`, `sameSite: "lax"`, `secure: false` (development), `maxAge: 7 days`.
+- **Expiry values (current code):**
+      - Access token: `expiresIn: "1minute"` (short-lived)
+      - Refresh token at login: `expiresIn: "1h"` (set in `login.js`)
+      - Refresh token issued by `refresh.js` helper: `expiresIn: "1d"` (note mismatch with `login.js`)
+- **Refresh flow (`refresh.js`):** The server reads the `RefreshToken` cookie, verifies it with `jwt.verify()`, checks the user exists, then uses `bcrypt.compare(cookieRefreshToken, user.RefreshToken)` to validate the cookie against the stored hashed token. If valid, it issues new tokens, stores the hashed refresh token and sets updated cookies.
+
+### Implementation note (recommended fix)
+`refresh.js` currently hashes and persists the old cookie value instead of the newly-issued refresh token; to properly rotate refresh tokens, update the code to hash and save the newly-created refresh token before responding.
+
+### Production recommendations
+- Serve cookies with `secure: true` and always use HTTPS.
+- Keep access tokens short and rotate refresh tokens on each use.
+- Persist only hashed refresh tokens server-side and implement a revocation or blacklist strategy for compromised tokens.
+
