@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+// import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import connectDB from "./lib/connectdb.js";
@@ -12,7 +12,7 @@ await connectDB();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors({ origin: process.env.ORIGIN, credentials: true }));
+// app.use(cors({ origin: process.env.ORIGIN, credentials: true }));
 
 app.use(cookieParser());
 app.use(bodyParser.json());
