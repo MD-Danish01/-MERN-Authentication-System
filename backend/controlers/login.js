@@ -1,6 +1,7 @@
 import User from "../models/login_user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import buildCookieOptions from "../lib/cookieOptions.js";
 
 const Login = async (req, res) => {
   try {
@@ -29,19 +30,11 @@ const Login = async (req, res) => {
       { expiresIn: "1h" },
     );
 
+    const cookieOptions = buildCookieOptions();
+
     // set token in cookie
-    res.cookie("AccessToken", AccessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7 * 1000,
-    }); // 7 days (secure:false for localhost HTTP)
-    res.cookie("RefreshToken", RefreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7 * 1000,
-    }); // 7 days (secure:false for localhost HTTP)
+    res.cookie("AccessToken", AccessToken, cookieOptions);
+    res.cookie("RefreshToken", RefreshToken, cookieOptions);
 
     //hash refresh token and store in database
     const hashedRefreshToken = await bcrypt.hash(RefreshToken, 10);

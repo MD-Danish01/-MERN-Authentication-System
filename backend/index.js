@@ -3,6 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import connectDB from "./lib/connectdb.js";
+import buildCookieOptions from "./lib/cookieOptions.js";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env" });
@@ -74,8 +75,9 @@ app.get("/refresh", refresh);
 
 // LOGOUT - Clear tokens from cookies
 app.get("/logout", (req, res) => {
-  res.clearCookie("AccessToken");
-  res.clearCookie("RefreshToken");
+  const cookieOptions = buildCookieOptions();
+  res.clearCookie("AccessToken", cookieOptions);
+  res.clearCookie("RefreshToken", cookieOptions);
   res.status(200).send("Logged out successfully");
 });
 

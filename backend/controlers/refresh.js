@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/login_user.js";
 import bcrypt from "bcrypt";
+import buildCookieOptions from "../lib/cookieOptions.js";
 
 const getAccessTokenAndRefreshToken = (userID) => {
   const AccessToken = jwt.sign({ userID }, process.env.JWT_SECRET, {
@@ -37,23 +38,15 @@ const refresh = async (req, res) => {
       getAccessTokenAndRefreshToken(user._id);
 
     //hash refresh token and store in database
-    const hashedRefreshToken = await bcrypt.hash(RefreshToken, 10);
+    const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
     user.RefreshToken = hashedRefreshToken;
     await user.save();
 
+    const cookieOptions = buildCookieOptions();
+
     // set token in cookie
-    res.cookie("AccessToken", AccessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7 * 1000,
-    }); // 7 days (secure:false for localhost HTTP)
-    res.cookie("RefreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7 * 1000,
-    }); // 7 days (secure:false for localhost HTTP)
+    res.cookie("AccessToken", AccessToken, cookieOptions);
+    res.cookie("RefreshToken", newRefreshToken, cookieOptions);
 
     res
       .status(200)
