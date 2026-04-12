@@ -1,5 +1,5 @@
 import express from "express";
-// import cors from "cors";
+import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import connectDB from "./lib/connectdb.js";
@@ -12,7 +12,39 @@ await connectDB();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// app.use(cors({ origin: process.env.ORIGIN, credentials: true }));
+const allowedOrigins = [
+  process.env.LOCALHOST_ORIGIN || "http://localhost:5173",
+  process.env.DEPLOYED_ORIGIN ||
+    "https://mern-authentication-system-flax.vercel.app",
+]
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server tools or same-origin requests with no Origin header.
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(cookieParser());
 app.use(bodyParser.json());
