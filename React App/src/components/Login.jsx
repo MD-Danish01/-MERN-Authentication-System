@@ -1,6 +1,8 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
+const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
+
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -12,7 +14,7 @@ const Login = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    let r = await fetch("http://localhost:3000/login", {
+    let r = await fetch(LOGIN_URL, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -88,7 +90,7 @@ const Login = () => {
               type="submit"
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition duration-200 mt-6"
             >
-              {isSubmitting ? "Signing in..." : "Sign In"}
+              {isSubmitting ? "Logging in..." : "Log In"}
             </button>
 
             {errors.myform && (
@@ -97,6 +99,18 @@ const Login = () => {
               </span>
             )}
           </form>
+
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <span>Don't have an account? </span>
+            <button
+              className="text-blue-400 px-6 py-2 rounded-lg hover:text-blue-600 transition"
+              onClick={() => {
+                navigate("/signup");
+              }}
+            >
+              <span className="font-semibold">Sign Up</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

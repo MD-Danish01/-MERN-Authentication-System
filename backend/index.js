@@ -3,13 +3,16 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import connectDB from "./lib/connectdb.js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env" });
 
 await connectDB();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: process.env.ORIGIN, credentials: true }));
 
 app.use(cookieParser());
 app.use(bodyParser.json());

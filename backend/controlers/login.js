@@ -49,7 +49,7 @@ const Login = async (req, res) => {
     await user.save();
 
     res.status(200).json({ AccessToken, RefreshToken });
-    console.log("User logged in:", username);
+    // console.log("User logged in:", username);
   } catch (err) {
     console.log("Error during login:", err);
     res.status(500).send("Server error");

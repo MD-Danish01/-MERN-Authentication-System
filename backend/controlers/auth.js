@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 import User from "../models/login_user.js";
+import refresh from "./refresh.js";
 
 const Auth = async (req, res) => {
   try {
     const AccessToken = req.cookies.AccessToken;
+
+    const RefreshToken = req.cookies.RefreshToken;
 
     if (!AccessToken) {
       return res.status(401).send({ message: "Unauthorized" });
@@ -17,7 +20,7 @@ const Auth = async (req, res) => {
       return res.status(401).send({ message: "Unauthorized" });
     }
 
-    return res.status(200).json({ username: user.username });
+    return res.status(200).json({ user: user, username: user.username, AccessToken: AccessToken, refreshToken: RefreshToken });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res

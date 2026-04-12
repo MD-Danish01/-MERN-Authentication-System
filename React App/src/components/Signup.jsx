@@ -1,7 +1,11 @@
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+
+const SIGNUP_URL = import.meta.env.VITE_SIGNUP_URL;
 
 const Signup = () => {
-  
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -12,7 +16,7 @@ const Signup = () => {
 
   //after sign up routre push to login page
   const onSubmit = async (data) => {
-    let r = await fetch("http://localhost:3000/signup", {
+    let r = await fetch(SIGNUP_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,7 +24,10 @@ const Signup = () => {
       body: JSON.stringify(data),
     });
     let res = await r.text();
-    console.log(data, res);
+    // console.log(data, res);
+    if (r.ok) {
+      navigate("/login");
+    }
   };
 
   return (
@@ -92,6 +99,18 @@ const Signup = () => {
               </span>
             )}
           </form>
+
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <span> Already have an account? </span>
+            <button
+              className="text-blue-400 px-6 py-2 rounded-lg hover:text-blue-600 transition"
+              onClick={() => {
+                navigate("/login");
+              }}
+            >
+              <span className="font-semibold">Login</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
