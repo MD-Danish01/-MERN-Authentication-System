@@ -7,7 +7,7 @@ const buildCookieOptions = () => {
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 60 * 60 * 24 * 7 * 1000,
-    path: "/",
+    path: "/account",
   };
 };
 
