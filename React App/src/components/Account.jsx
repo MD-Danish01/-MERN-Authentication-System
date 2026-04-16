@@ -26,7 +26,6 @@ const Account = () => {
       const res = await r.json();
       if (res.message === "Unauthorized") {
         navigate("/");
-        return;
       }
       if (res.message === "Access token expired") {
         setIsLoggedIn(false);
@@ -41,7 +40,6 @@ const Account = () => {
         } else {
           fetchData();
         }
-        return;
       }
       // console.log(res);
       setIsLoggedIn(true);
