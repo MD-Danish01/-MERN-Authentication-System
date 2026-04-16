@@ -51,7 +51,7 @@ const refresh = async (req, res) => {
     res
       .status(200)
       .json({ ok: true, AccessToken, RefreshToken: newRefreshToken });
-    console.log("Tokens refreshed for user:", user.username);
+    //console.log("Tokens refreshed for user:", user.username);
   } catch (error) {
     console.error("Error occurred while refreshing tokens:", error);
     return res
