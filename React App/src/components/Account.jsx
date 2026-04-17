@@ -14,9 +14,7 @@ const Account = () => {
   const [copAssTok, setCopAssTok] = useState(false);
   const [copRefTok, setCopRefTok] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  
 
   const fetchData = async () => {
     try {
@@ -26,7 +24,6 @@ const Account = () => {
       const res = await r.json();
       if (res.message === "Unauthorized") {
         navigate("/");
-        return;
       }
       if (res.message === "Access token expired") {
         setIsLoggedIn(false);
@@ -41,7 +38,6 @@ const Account = () => {
         } else {
           fetchData();
         }
-        return;
       }
       setIsLoggedIn(true);
       setUsername(res.username || "");
@@ -51,6 +47,10 @@ const Account = () => {
       console.error("Failed to fetch account:", err);
     }
   };
+
+useEffect(() => {
+    fetchData();
+  }, []);
 
   const copyToClipboard = async (value) => {
     try {
