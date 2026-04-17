@@ -14,9 +14,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
-  process.env.LOCALHOST_ORIGIN || "http://localhost:5173",
-  process.env.DEPLOYED_ORIGIN ||
-    "https://mern-authentication-system-flax.vercel.app",
+  process.env.LOCALHOST_ORIGIN ,
+  process.env.DEPLOYED_ORIGIN ,
 ]
   .map((origin) => origin.trim())
   .filter(Boolean);
