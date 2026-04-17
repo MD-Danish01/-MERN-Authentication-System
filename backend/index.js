@@ -56,6 +56,7 @@ import Signup from "./controlers/signup.js";
 import Login from "./controlers/login.js";
 import Auth from "./controlers/auth.js";
 import refresh from "./controlers/refresh.js";
+import logout from "./controlers/logout.js";
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -74,12 +75,7 @@ app.get("/account", Auth);
 app.get("/refresh", refresh);
 
 // LOGOUT - Clear tokens from cookies
-app.get("/logout", (req, res) => {
-  const cookieOptions = buildCookieOptions();
-  res.clearCookie("AccessToken", cookieOptions);
-  res.clearCookie("RefreshToken", cookieOptions);
-  res.status(200).send("Logged out successfully");
-});
+app.get("/logout", logout);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

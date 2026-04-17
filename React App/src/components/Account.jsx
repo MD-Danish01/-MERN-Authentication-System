@@ -30,20 +30,19 @@ const Account = () => {
       }
       if (res.message === "Access token expired") {
         setIsLoggedIn(false);
-        // console.log("/refresh api call");
+  
         const a = await fetch(REFRESH_URL, {
           credentials: "include",
         });
         const response = await a.json();
-        // console.log(response);
-        if (!a.ok && !response.ok) {
+      
+        if (!response.ok) {
           navigate("/");
         } else {
           fetchData();
         }
         return;
       }
-      // console.log(res);
       setIsLoggedIn(true);
       setUsername(res.username || "");
       setAccessToken(res.AccessToken || "");

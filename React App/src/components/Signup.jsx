@@ -1,10 +1,36 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const SIGNUP_URL = import.meta.env.VITE_SIGNUP_URL;
+const ACCOUNT_URL = import.meta.env.VITE_ACCOUNT_URL;
+const REFRESH_URL = import.meta.env.VITE_REFRESH_URL;
 
 const Signup = () => {
   const navigate = useNavigate();
+
+  async function fetchUser() {
+    const a = await fetch(ACCOUNT_URL, {
+      credentials: "include",
+    });
+    const res = await a.json();
+
+
+    if (res.ok) {
+      navigate("/account");
+    }
+    if (res.message === "Access token expired") {
+      const r = await fetch(REFRESH_URL, {
+        credentials: "include",
+      });
+      const response = await r.json();
+      if (response.ok) fetchUser();
+    }
+  }
+  //check is user have a session
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   const {
     register,
@@ -24,7 +50,7 @@ const Signup = () => {
       body: JSON.stringify(data),
     });
     let res = await r.text();
-    // console.log(data, res);
+   
     if (r.ok) {
       navigate("/login");
     }

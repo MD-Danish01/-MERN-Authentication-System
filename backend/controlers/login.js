@@ -22,12 +22,12 @@ const Login = async (req, res) => {
 
     // Generate JWT access and refresh tokens
     const AccessToken = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1minute",
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRATION || "10m",
     });
     const RefreshToken = jwt.sign(
       { userID: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION || "7d" },
     );
 
     const cookieOptions = buildCookieOptions();
@@ -42,7 +42,6 @@ const Login = async (req, res) => {
     await user.save();
 
     res.status(200).json({ AccessToken, RefreshToken });
-    // console.log("User logged in:", username);
   } catch (err) {
     console.log("Error during login:", err);
     res.status(500).send("Server error");

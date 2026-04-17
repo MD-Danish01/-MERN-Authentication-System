@@ -15,7 +15,6 @@ const Signup = async (req, res) => {
     const user = await User.create({ username, password: hashedPassword });
 
     res.status(201).send("User created successfully");
-    // console.log("New user created:", user);
   } catch (err) {
     console.log("Error creating user:", err);
     if (err.name === "ValidationError") {
